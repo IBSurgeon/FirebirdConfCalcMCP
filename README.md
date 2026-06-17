@@ -66,7 +66,7 @@ go install github.com/IBSurgeon/FirebirdConfCalcMCP/cmd/firebird-conf-calc-mcp@l
 
 This MCP server uses **stdio** transport: the client launches `firebird-conf-calc-mcp` as a local subprocess. That works out of the box in desktop/IDE clients listed below as **Direct (stdio)**.
 
-**ChatGPT** and **Grok** require a **public HTTPS** MCP endpoint (HTTP/SSE). This release is stdio-only, so use a bridge (see [Remote clients](#remote-clients-chatgpt-grok)) or an MCP-capable desktop client instead.
+**ChatGPT** and **Grok** require a **public HTTPS** MCP endpoint (Streamable HTTP or SSE). This release is stdio-only, so use [supergateway + tunnel](#remote-clients-chatgpt-grok) or an MCP-capable desktop client instead.
 
 ### Shared configuration
 
@@ -173,7 +173,7 @@ ChatGPT custom connectors need a **remotely reachable** MCP server (Streamable H
    - **Authentication:** as required by your deployment (OAuth is common for ChatGPT connectors)
 3. In a chat, open **Tools / Connectors** and enable the connector.
 
-**Local binary (this repo):** expose stdio via a bridge, for example [mcp-remote](https://www.npmjs.com/package/mcp-remote) or your own HTTP wrapper, then point ChatGPT at the tunnel URL. Stdio cannot be pasted directly into ChatGPT.
+**Local binary (this repo):** stdio cannot be pasted into ChatGPT. Use [supergateway + tunnel](#remote-clients-chatgpt-grok) to expose this server over HTTPS, then paste the tunnel URL in the connector.
 
 Docs: [OpenAI — custom MCP connectors](https://community.openai.com/t/how-to-set-up-a-remote-mcp-server-and-connect-it-to-chatgpt-deep-research/1278375)
 
@@ -188,7 +188,7 @@ Grok **Bring Your Own MCP** also requires a **public HTTPS** server (Streamable 
 3. Enter your MCP server URL and complete authentication.
 4. Enable the connector in a Grok chat.
 
-**Local binary:** run a tunnel (e.g. ngrok, Cloudflare Tunnel) to an HTTP/SSE front-end for this server, or host the MCP service on a VM with HTTPS.
+**Local binary:** use [supergateway + tunnel](#remote-clients-chatgpt-grok), or host the MCP service on a VM with HTTPS.
 
 Docs: [xAI — Custom MCP connectors](https://docs.x.ai/grok/connectors)
 
@@ -274,12 +274,62 @@ Docs: [Qwen Code — MCP servers](https://qwenlm.github.io/qwen-code-docs/en/dev
 
 ### Remote clients (ChatGPT, Grok)
 
-This v1 release ships **stdio only**. For ChatGPT or Grok you need either:
+This release ships **stdio only**. ChatGPT and Grok connect to a **remote HTTPS URL**; they cannot launch a local binary.
 
-- A **hosted** build of this server behind HTTPS (future release), or
-- A **local bridge** that runs `firebird-conf-calc-mcp` and exposes Streamable HTTP/SSE on a tunnel URL.
+**Options:**
 
-Until an official HTTP transport is added, the simplest path is **Cursor** or **Claude Desktop** on the same machine as the binary.
+1. **Bridge (today)** — [supergateway](https://github.com/supercorp-ai/supergateway) wraps the stdio server as Streamable HTTP; a tunnel (ngrok, Cloudflare Tunnel) or reverse proxy provides HTTPS.
+2. **Native HTTP mode (future)** — built-in Streamable HTTP in this binary behind your own TLS proxy.
+3. **Desktop clients (simplest)** — use **Cursor** or **Claude Desktop** with stdio on the same machine as the binary.
+
+> **Note:** [mcp-remote](https://www.npmjs.com/package/mcp-remote) runs the **opposite** direction (remote HTTP → local stdio client for Cursor/Claude). It does **not** expose this server to ChatGPT.
+
+#### Bridge: supergateway + tunnel
+
+Flow: `ChatGPT → HTTPS tunnel → supergateway :8000 → firebird-conf-calc-mcp (stdio) → cc.ib-aid.com`
+
+**Prerequisites:** Node.js 18+, this binary, `password_api.txt`, and a tunnel tool ([ngrok](https://ngrok.com/) or [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).
+
+**1. Start the bridge** (leave running):
+
+Windows (Streamable HTTP — recommended):
+
+```powershell
+npx -y supergateway `
+  --stdio "C:\Tools\firebird-conf-calc-mcp\firebird-conf-calc-mcp.exe --credentials C:\Tools\firebird-conf-calc-mcp\password_api.txt" `
+  --outputTransport streamableHttp `
+  --port 8000
+```
+
+Linux / macOS:
+
+```bash
+npx -y supergateway \
+  --stdio "/usr/local/bin/firebird-conf-calc-mcp --credentials /path/to/password_api.txt" \
+  --outputTransport streamableHttp \
+  --port 8000
+```
+
+Local endpoint: `http://127.0.0.1:8000/mcp`
+
+**2. Expose HTTPS** (second terminal):
+
+```bash
+ngrok http 8000
+# or: cloudflared tunnel --url http://localhost:8000
+```
+
+**3. Register in ChatGPT or Grok** — use `https://<tunnel-host>/mcp` as the MCP server URL (enable Developer Mode in ChatGPT under **Settings → Connectors**).
+
+**4. Verify locally** (optional):
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+Connect to `http://127.0.0.1:8000/mcp` and confirm the three tools are listed.
+
+**Security:** A public tunnel exposes your MCP tools to anyone with the URL. They can call `calculate_firebird_config` (using your API credentials) and `write_firebird_configs` (writing on the machine running the bridge). Use tunnel auth (e.g. Cloudflare Access), stop the tunnel when idle, and prefer calculate-only workflows over remote writes. For production, use a fixed domain with TLS, authentication, and rate limits — or wait for native HTTP mode in this binary.
 
 
 ## Tools
@@ -393,6 +443,7 @@ Skips automatically if `password_api.txt` is missing (e.g. in CI). Set `CC_E2E=0
 ## Troubleshooting
 
 - **MCP not connecting**: use absolute paths; rebuild binary; restart client (see [AI client setup](#ai-client-setup))
+- **ChatGPT / Grok connector fails**: confirm supergateway is running, tunnel is active, URL uses `https://` and ends with `/mcp`; free ngrok URLs change on restart
 - **API error**: verify credentials; check required parameters for your Firebird version ([API docs](https://ib-aid.com/api-to-create-firebird-configurations))
 - **Type validation error on numeric fields**: pass `cores`, `ram`, `count_users`, `size_db`, and `page_size` as integers (e.g. `8`, not `"8"`)
 - **Write rejected**: ensure `output_dir` exists; try `dry_run: true` first
