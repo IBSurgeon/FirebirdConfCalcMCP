@@ -7,6 +7,7 @@ Releases: [github.com/IBSurgeon/FirebirdConfCalcMCP/releases](https://github.com
 
 ## Prerequisites
 
+- Go **1.25+** (only if building from source)
 - A registered account at [cc.ib-aid.com](https://cc.ib-aid.com/) with an API password (widget: *Get Firebird configuration via API*)
 - Credentials file (local only, never commit to git):
 
@@ -14,6 +15,8 @@ Releases: [github.com/IBSurgeon/FirebirdConfCalcMCP/releases](https://github.com
 user: your@email.com
 password: your_api_password
 ```
+
+Accepted key aliases: `user` / `mailLogin` / `login` / `email` and `password` / `passApi` / `pass`.
 
 ## Installation
 
@@ -327,6 +330,8 @@ Until an official HTTP transport is added, the simplest path is **Cursor** or **
 
 ### Parameter notes by version/architecture
 
+Numeric tool parameters (`cores`, `ram`, `count_users`, `size_db`, `page_size`) must be **JSON integers**, not strings.
+
 - **FB/HQ 2.5 Classic/SuperClassic**: `ram`, `count_users`, `page_size`
 - **FB/HQ 2.5 SuperServer**: version and architecture only
 - **FB/HQ 3.0–5.0 Classic/SuperClassic**: `ram`, `count_users`, `cores`, `page_size`
@@ -337,7 +342,7 @@ Until an official HTTP transport is added, the simplest path is **Cursor** or **
 1. Download the latest release for your OS from [Releases](https://github.com/IBSurgeon/FirebirdConfCalcMCP/releases)
 2. Replace the binary
 3. Restart your MCP client (Cursor, Claude Desktop, etc.)
-4. Call `get_server_info` — if outdated, response includes e.g. *"Current version 1.0.0. Newer version 1.1.0 exists — update to get more tools: …"*
+4. Call `get_server_info` — if outdated, response includes e.g. *"Current version 1.0.1. Newer version 1.2.0 exists — update to get more tools: …"*
 
 Check version from CLI:
 
@@ -363,6 +368,16 @@ make build
 
 Binary: `bin/firebird-conf-calc-mcp` (`.exe` on Windows)
 
+Cross-platform release archives (Windows, Linux, macOS):
+
+```bash
+make build-all
+# or
+powershell -File scripts/build-all.ps1 -Version 1.0.1
+```
+
+Output: `dist/firebird-conf-calc-mcp_<version>_<os>_<arch>.zip` or `.tar.gz`
+
 ### End-to-end test
 
 Runs the MCP server as a subprocess, connects via stdio, and calls the live Configuration Calculator API using [`password_api.txt`](password_api.txt):
@@ -379,6 +394,7 @@ Skips automatically if `password_api.txt` is missing (e.g. in CI). Set `CC_E2E=0
 
 - **MCP not connecting**: use absolute paths; rebuild binary; restart client (see [AI client setup](#ai-client-setup))
 - **API error**: verify credentials; check required parameters for your Firebird version ([API docs](https://ib-aid.com/api-to-create-firebird-configurations))
+- **Type validation error on numeric fields**: pass `cores`, `ram`, `count_users`, `size_db`, and `page_size` as integers (e.g. `8`, not `"8"`)
 - **Write rejected**: ensure `output_dir` exists; try `dry_run: true` first
 
 ## References
