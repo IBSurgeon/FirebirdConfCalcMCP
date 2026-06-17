@@ -26,17 +26,13 @@ func TestCalculateSuccess(t *testing.T) {
 	defer srv.Close()
 
 	client := NewClient(srv.URL)
-	cores := 8
-	users := 100
-	ram := 16
-	page := 4096
 	params := CalculateParams{
 		ServerVersion:      "fb3",
 		ServerArchitecture: "Classic",
-		Cores:              &cores,
-		CountUsers:         &users,
-		RAM:                &ram,
-		PageSize:           &page,
+		Cores:              8,
+		CountUsers:         100,
+		RAM:                16,
+		PageSize:           4096,
 	}
 
 	result, err := client.Calculate(context.Background(), params.ToRequest("user@test.com", "pass"))

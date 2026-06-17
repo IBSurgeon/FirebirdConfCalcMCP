@@ -9,14 +9,20 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/version.Commit=$(COMMIT) \
 	-X $(MODULE)/internal/version.Date=$(DATE)
 
-.PHONY: build test clean release-snapshot
+.PHONY: build build-all test clean release-snapshot e2e
 
 build:
 	@mkdir -p bin
 	go build -ldflags "$(LDFLAGS)" -o bin/$(BINARY_NAME) ./cmd/firebird-conf-calc-mcp
 
+build-all:
+	@powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-all.ps1 -Version $(VERSION)
+
 test:
 	go test ./...
+
+e2e:
+	go test -v -timeout 3m ./e2e/...
 
 clean:
 	rm -rf bin dist

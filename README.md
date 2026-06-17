@@ -363,6 +363,18 @@ make build
 
 Binary: `bin/firebird-conf-calc-mcp` (`.exe` on Windows)
 
+### End-to-end test
+
+Runs the MCP server as a subprocess, connects via stdio, and calls the live Configuration Calculator API using [`password_api.txt`](password_api.txt):
+
+```bash
+make e2e
+# or
+go test -v -timeout 3m ./e2e/...
+```
+
+Skips automatically if `password_api.txt` is missing (e.g. in CI). Set `CC_E2E=0` to disable. Override credentials path with `CC_CREDENTIALS_FILE`.
+
 ## Troubleshooting
 
 - **MCP not connecting**: use absolute paths; rebuild binary; restart client (see [AI client setup](#ai-client-setup))
