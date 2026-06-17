@@ -1,0 +1,49 @@
+version: 2
+project_name: FirebirdConfCalcMCP
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: firebird-conf-calc-mcp
+    main: ./cmd/firebird-conf-calc-mcp
+    binary: firebird-conf-calc-mcp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/IBSurgeon/FirebirdConfCalcMCP/internal/version.Version={{.Version}}
+      - -X github.com/IBSurgeon/FirebirdConfCalcMCP/internal/version.Commit={{.Commit}}
+      - -X github.com/IBSurgeon/FirebirdConfCalcMCP/internal/version.Date={{.Date}}
+
+archives:
+  - id: default
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+      - version.json
+
+release:
+  github:
+    owner: IBSurgeon
+    name: FirebirdConfCalcMCP
+  extra_files:
+    - glob: version.json
+
+changelog:
+  sort: asc

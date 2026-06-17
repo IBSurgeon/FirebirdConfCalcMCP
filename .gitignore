@@ -1,0 +1,6 @@
+/bin/
+/dist/
+*.exe
+password_api.txt
+*.bak.*
+.DS_Store

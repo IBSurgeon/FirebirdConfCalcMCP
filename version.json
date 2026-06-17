@@ -1,0 +1,10 @@
+{
+  "latest_version": "1.0.0",
+  "release_url": "https://github.com/IBSurgeon/FirebirdConfCalcMCP/releases/tag/v1.0.0",
+  "tools": [
+    "calculate_firebird_config",
+    "write_firebird_configs",
+    "get_server_info"
+  ],
+  "release_notes": "Initial release: Configuration Calculator API, config file writer, version info with update notifications."
+}
