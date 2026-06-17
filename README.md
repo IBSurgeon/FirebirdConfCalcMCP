@@ -2,7 +2,7 @@
 
 MCP server for the [IBSurgeon Configuration Calculator for Firebird](https://cc.ib-aid.com/). Generates optimized `firebird.conf` and `databases.conf` files via API and can write them to disk with timestamped backups.
 
-![Description of image](https://raw.githubusercontent.com/IBSurgeon/FirebirdConfCalcMCP/main/claude_desktop_mcp2.png)
+![Claude Desktop showing Firebird Config Calculator MCP tools](https://raw.githubusercontent.com/IBSurgeon/FirebirdConfCalcMCP/main/claude_desktop_mcp2.png)
 
 Repository: [github.com/IBSurgeon/FirebirdConfCalcMCP](https://github.com/IBSurgeon/FirebirdConfCalcMCP)  
 Releases: [github.com/IBSurgeon/FirebirdConfCalcMCP/releases](https://github.com/IBSurgeon/FirebirdConfCalcMCP/releases)
