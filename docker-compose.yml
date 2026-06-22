@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  firebird-config-calculator:
+    build: .
+    container_name: firebird-config-calculator
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
+    environment:
+      - CC_EMAIL=${CC_EMAIL:-}
+      - CC_PASSWORD=${CC_PASSWORD:-}
+      - PORT=${PORT:-8000}
+      - CC_UPDATE_CHECK=${CC_UPDATE_CHECK:-enabled}
+    volumes:
+      # Mount your credentials file (create password_api.txt from the template)
+      - ./password_api.txt:/app/credentials/password_api.txt:ro

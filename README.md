@@ -49,6 +49,73 @@ tar xzf /tmp/fcc-mcp.tar.gz -C /tmp
 sudo mv /tmp/firebird-conf-calc-mcp /usr/local/bin/
 ```
 
+### Docker (Streamable HTTP — recommended for remote clients)
+
+Run the MCP server as a container with [supergateway](https://github.com/supercorp-ai/supergateway) wrapping stdio into **Streamable HTTP** on port 8000 — ready for ChatGPT, Grok, n8n, Cursor, and any HTTP MCP client.
+
+**1. Clone the repo**
+
+```bash
+git clone https://github.com/IBSurgeon/FirebirdConfCalcMCP.git
+cd FirebirdConfCalcMCP
+```
+
+**2. Create your credentials file**
+
+Copy `.env.example` to `password_api.txt` and fill in your API credentials from [cc.ib-aid.com](https://cc.ib-aid.com/):
+
+```
+user: your@email.com
+password: your_api_password
+```
+
+> ⚠️ `password_api.txt` is in `.gitignore` — never commit your credentials.
+
+**3. Build and run**
+
+```bash
+docker compose up -d --build
+```
+
+The MCP server is now available at `http://localhost:8000/mcp`.
+
+**4. Connect your client**
+
+| Client | MCP URL |
+|--------|---------|
+| Cursor | `http://localhost:8000/mcp` |
+| n8n | `http://firebird-config-calculator:8000/mcp` (same Docker network) |
+| ChatGPT / Grok | Use a tunnel (see [remote clients](#remote-clients-chatgpt-grok)) |
+
+**Environment variables** (see `.env.example`):
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CC_EMAIL` | — | API email (env override for credentials) |
+| `CC_PASSWORD` | — | API password (env override for credentials) |
+| `PORT` | `8000` | MCP HTTP server port |
+| `CC_UPDATE_CHECK` | `enabled` | Check for updates on startup |
+
+**Health check:**
+
+```bash
+curl -s http://localhost:8000/mcp
+# → {"jsonrpc":"2.0","error":{"code":-32000,"message":"Method not allowed."},"id":null}
+# (expected — POST with JSON-RPC required)
+```
+
+**Architecture:**
+
+```
+HTTP client (Cursor, n8n, ChatGPT via tunnel)
+       │
+       ▼
+supergateway (:8000) ──stdio──► firebird-conf-calc-mcp
+                                       │
+                                       ▼
+                              cc.ib-aid.com (API)
+```
+
 ### From source
 
 ```bash
